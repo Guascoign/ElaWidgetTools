@@ -78,6 +78,15 @@ void ElaComboBox::setEditable(bool editable)
     }
 }
 
+void ElaComboBox::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
+        emit clicked();
+    }
+    QComboBox::mousePressEvent(event);
+}
+
 void ElaComboBox::showPopup()
 {
     Q_D(ElaComboBox);

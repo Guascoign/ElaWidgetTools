@@ -16,11 +16,13 @@ public:
     ~ElaComboBox() override;
 
     void setEditable(bool editable);
-
+signals:
+    void clicked(); // 鼠标点击信号
 protected:
     virtual void showPopup() override;
     virtual void hidePopup() override;
     virtual void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
 };
 
 #endif // ELACOMBOBOX_H
