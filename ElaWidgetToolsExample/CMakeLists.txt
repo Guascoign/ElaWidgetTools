@@ -91,6 +91,7 @@ if (QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(${PROJECT_NAME})
 endif ()
 
+
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}
@@ -104,19 +105,33 @@ if (MSVC)
 endif ()
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_SDK_DIR}/bin")
 if (WIN32)
-    install(CODE "
-    if(EXISTS \"${WINDEPLOYQT_EXECUTABLE}\" AND NOT EXISTS \"${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/platforms\")
-        execute_process(
-            COMMAND \"${CMAKE_COMMAND}\" -E env PATH=\"${QT_SDK_DIR}/bin\"
-                \"${WINDEPLOYQT_EXECUTABLE}\"
-                \"$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:${PROJECT_NAME}>\"
-                --dir \"${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}\"
-                --no-compiler-runtime
-                --no-system-d3d-compiler
-                --no-opengl-sw
-                --verbose 1
-        )
-    endif()"
+    # 先安装核心依赖
+    install(FILES $<TARGET_FILE:ElaWidgetTools>
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}
     )
-endif ()
+    
+    install(
+        FILES ${QT_SDK_DIR}/bin/Qt${QT_VERSION_MAJOR}Core.dll
+        FILES ${QT_SDK_DIR}/bin/Qt${QT_VERSION_MAJOR}Gui.dll
+        FILES ${QT_SDK_DIR}/bin/Qt${QT_VERSION_MAJOR}Widgets.dll
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}
+    )
+    
+    install(FILES ${QT_SDK_DIR}/plugins/platforms/qwindows.dll 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/platforms)
+    
+    # 然后尝试用 windeployqt 补充其他依赖
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${QT_SDK_DIR}/bin")
+    if(WINDEPLOYQT_EXECUTABLE)
+        install(CODE "
+            execute_process(
+                COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+                    \"${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/${PROJECT_NAME}.exe\"
+                    --verbose 1
+                    --no-compiler-runtime
+                WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}\"
+            )"
+        )
+    endif()
+endif()
 
